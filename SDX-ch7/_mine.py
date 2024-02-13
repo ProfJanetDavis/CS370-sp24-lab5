@@ -34,8 +34,12 @@ def do_set(env, args):
     return value
 
 def do_print(env, args):
-    assert len(args) == 1
-    print(args[0])
+    line = ""
+    if len(args) > 0:
+        line += str(do(env,args[0])) 
+    for arg in args[1:]:
+        line += " " + str(do(env, arg))
+    print(line)
 
 def do_repeat(env, args):
     assert len(args) == 2
@@ -44,7 +48,33 @@ def do_repeat(env, args):
     assert isinstance(args[1], list)
     for _ in range(args[0]):
         do(env, args[1])
+        
+def do_if(env, args):
+    assert len(args) == 3
+    condition = do(env, args[0])
+    if condition:
+        do(env, args[1])
+    else:   
+        do(env, args[2])
+        
+def do_compare(env, args, op):
+    assert isinstance(op, str)
+    assert len(args) == 2
+    arg1 = do(env, args[0])
+    arg2 = do(env, args[1])
+    return eval(f"{arg1} {op} {arg2}")
+
+def do_equal(env, args):
+    do_compare(env, args, '==')
     
+def do_leq(env, args):
+    do_compare(env, args, '<=')
+    
+def do_geq(env, args):
+    do_compare(env, args, '>=')
+    
+def do_neq(env, args):
+    do_compare(env, args, '!=')    
 
 # [lookup]
 OPS = {
@@ -57,9 +87,9 @@ OPS = {
 # [do]
 def do(env, expr):
     # Integers evaluate to themselves.
-    if isinstance(expr, int):
+    if isinstance(expr, (int, str)):
         return expr
-
+    
     # Lists trigger function calls.
     assert isinstance(expr, list)
     assert expr[0] in OPS, f"Unknown operation {expr[0]}"
